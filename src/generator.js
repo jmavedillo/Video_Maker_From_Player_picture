@@ -6,6 +6,28 @@ const rootDir = path.resolve(__dirname, '..');
 const imagePath = path.join(rootDir, 'assets', 'images', 'base.png');
 const fontsDir = path.join(rootDir, 'assets', 'fonts');
 
+const TIMING_PRESETS = {
+  medium: {
+    videoDurationSeconds: 7.5,
+    scrollStartSeconds: 0,
+    scrollEndSeconds: 5.3,
+    initialPauseSeconds: 1.5,
+    finalPauseSeconds: 1.2,
+    scrollPixelsPerSecond: 56
+  },
+  long: {
+    videoDurationSeconds: 10,
+    scrollStartSeconds: 0,
+    scrollEndSeconds: 8.5,
+    initialPauseSeconds: 1.5,
+    finalPauseSeconds: 1.5,
+    scrollPixelsPerSecond: 48
+  }
+};
+
+const selectedTimingPresetName = process.env.TIMING_PRESET === 'medium' ? 'medium' : 'long';
+const selectedTimingPreset = TIMING_PRESETS[selectedTimingPresetName];
+
 function escapeDrawtextText(input) {
   return String(input)
     .replace(/\\/g, '\\\\')
@@ -24,13 +46,19 @@ function buildConfig(options = {}) {
     'Now Playing — This is a long scrolling title for the first MP4 proof of concept';
 
   const totalDuration = Number(
-    options.videoDurationSeconds ?? process.env.VIDEO_DURATION_SECONDS ?? 5
+    options.videoDurationSeconds ??
+      process.env.VIDEO_DURATION_SECONDS ??
+      selectedTimingPreset.videoDurationSeconds
   );
   const startScrollAt = Number(
-    options.scrollStartSeconds ?? process.env.SCROLL_START_SECONDS ?? 0
+    options.scrollStartSeconds ??
+      process.env.SCROLL_START_SECONDS ??
+      selectedTimingPreset.scrollStartSeconds
   );
   const endScrollAt = Number(
-    options.scrollEndSeconds ?? process.env.SCROLL_END_SECONDS ?? 3.5
+    options.scrollEndSeconds ??
+      process.env.SCROLL_END_SECONDS ??
+      selectedTimingPreset.scrollEndSeconds
   );
 
   if (!Number.isFinite(totalDuration) || totalDuration <= 0) {
@@ -95,11 +123,12 @@ function generateVideo(options) {
 
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
   const escapedText = escapeDrawtextText(config.text);
-  const initialScrollPauseSeconds = 1.5;
-  const finalScrollPauseSeconds = 0.7;
+  const initialScrollPauseSeconds = selectedTimingPreset.initialPauseSeconds;
+  const finalScrollPauseSeconds = selectedTimingPreset.finalPauseSeconds;
+  const scrollPixelsPerSecond = selectedTimingPreset.scrollPixelsPerSecond;
   const delayedScrollStart = config.startScrollAt + initialScrollPauseSeconds;
   const delayedScrollEnd = Math.min(
-    config.endScrollAt + initialScrollPauseSeconds,
+    config.endScrollAt,
     config.totalDuration - finalScrollPauseSeconds
   );
 
@@ -115,7 +144,7 @@ function generateVideo(options) {
   const revealViewportY = '482';
   const revealViewportW = '300';
   const revealViewportH = '88';
-  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*120,w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*120))`;
+  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*${scrollPixelsPerSecond},w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*${scrollPixelsPerSecond}))`;
 
   const filter = [
     `scale=500:750,drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill,split=2[base][textsrc]`,
