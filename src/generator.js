@@ -95,12 +95,13 @@ function generateVideo(options) {
 
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
   const escapedText = escapeDrawtextText(config.text);
-  // Lift the reveal text into a deliberate secondary message zone with a safer bottom margin.
-  const revealTextY = 'h-190';
+  // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
+  const revealTextY = 'h*0.52';
 
   const filter = [
+    'scale=500:750',
     `drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill`,
-    `drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=58:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))':y=${revealTextY}`
+    `drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=72:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))':y=${revealTextY}`
   ].join(',');
 
   const ffmpegArgs = [
@@ -113,8 +114,6 @@ function generateVideo(options) {
     String(config.totalDuration),
     '-vf',
     filter,
-    '-s',
-    '500x750',
     '-c:v',
     'libx264',
     '-preset',
