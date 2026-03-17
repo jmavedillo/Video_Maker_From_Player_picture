@@ -24,13 +24,13 @@ function buildConfig(options = {}) {
     'Now Playing — This is a long scrolling title for the first MP4 proof of concept';
 
   const totalDuration = Number(
-    options.videoDurationSeconds ?? process.env.VIDEO_DURATION_SECONDS ?? 3
+    options.videoDurationSeconds ?? process.env.VIDEO_DURATION_SECONDS ?? 5
   );
   const startScrollAt = Number(
-    options.scrollStartSeconds ?? process.env.SCROLL_START_SECONDS ?? 0.5
+    options.scrollStartSeconds ?? process.env.SCROLL_START_SECONDS ?? 0
   );
   const endScrollAt = Number(
-    options.scrollEndSeconds ?? process.env.SCROLL_END_SECONDS ?? 2.5
+    options.scrollEndSeconds ?? process.env.SCROLL_END_SECONDS ?? 3.5
   );
 
   if (!Number.isFinite(totalDuration) || totalDuration <= 0) {
@@ -99,13 +99,13 @@ function generateVideo(options) {
   const delayedScrollStart = config.startScrollAt + initialScrollPauseSeconds;
   const delayedScrollEnd = config.endScrollAt + initialScrollPauseSeconds;
   // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
-  const revealTextY = '490';
+  const revealTextY = '480';
   // Fixed crop viewport is intentional because the frame is already scaled to 500x750.
   const revealViewportX = '60';
   const revealViewportY = '482';
   const revealViewportW = '300';
   const revealViewportH = '88';
-  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*220,w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*220))`;
+  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*120,w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*120))`;
 
   const filter = [
     `scale=500:750,drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill,split=2[base][textsrc]`,
