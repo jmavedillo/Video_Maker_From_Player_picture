@@ -57,6 +57,22 @@ docker run --rm \
   video-maker-poc
 ```
 
+Optional timing controls:
+
+```bash
+docker run --rm \
+  -e VIDEO_DURATION_SECONDS=12 \
+  -e SCROLL_START_SECONDS=2 \
+  -e SCROLL_END_SECONDS=10 \
+  -v "$(pwd)/output:/app/output" \
+  video-maker-poc
+```
+
+Timing variables must satisfy:
+
+- `VIDEO_DURATION_SECONDS > 0`
+- `0 <= SCROLL_START_SECONDS < SCROLL_END_SECONDS <= VIDEO_DURATION_SECONDS`
+
 Output file:
 
 - `output/test-reveal.mp4`
@@ -75,3 +91,4 @@ node src/index.js
 - Writes output to filesystem path (`/app/output`) without local-machine-only assumptions.
 - No frontend, no external API integrations, no Spotify coupling.
 - Configuration is environment-variable friendly (`REVEAL_TEXT`).
+- Supports environment-variable timing controls (`VIDEO_DURATION_SECONDS`, `SCROLL_START_SECONDS`, `SCROLL_END_SECONDS`).
