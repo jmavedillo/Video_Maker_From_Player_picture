@@ -1,7 +1,7 @@
 # Video_Maker_From_Player_picture
 
 Minimal isolated experiment service that generates a short MP4 from:
-- one static base image
+- one provided base image (or optional local fallback)
 - one long scrolling text line (music-player style reveal)
 
 Implementation is intentionally simple:
@@ -52,6 +52,9 @@ Accepts JSON body:
 ```json
 {
   "text": "your reveal text",
+  "baseImage": {
+    "dataBase64": "<base64 PNG>"
+  },
   "videoDurationSeconds": 10,
   "scrollStartSeconds": 1.5,
   "scrollEndSeconds": 8.5
@@ -59,8 +62,17 @@ Accepts JSON body:
 ```
 
 - `text` is required.
+- `baseImage.dataBase64` is the caller-provided PNG bytes encoded as base64.
+- if `baseImage` is omitted, the service falls back to local `assets/images/base.png`.
 - timing fields are optional and default to environment variables or built-ins.
 - response is `video/mp4`.
+
+Validation errors include:
+- missing/empty `text`
+- invalid `baseImage` object shape
+- missing/empty `baseImage.dataBase64`
+- invalid base64
+- invalid or unreadable decoded image
 
 Timing values must satisfy:
 - `VIDEO_DURATION_SECONDS > 0`
@@ -80,17 +92,23 @@ One-shot file generation (old behavior):
 npm run generate
 ```
 
-Example render request:
+Example render request with JSON base64 image input:
 
 ```bash
+BASE64_IMAGE="$(base64 -w 0 assets/images/base.png)"
+
 curl -X POST http://localhost:3000/render \
   -H "Content-Type: application/json" \
-  -d '{
-    "text": "Now Playing — Your long custom title goes here",
-    "videoDurationSeconds": 12,
-    "scrollStartSeconds": 2,
-    "scrollEndSeconds": 10
-  }' \
+  --data-binary "$(jq -n \
+    --arg text 'Now Playing — Your long custom title goes here' \
+    --arg base64 "$BASE64_IMAGE" \
+    '{
+      text: $text,
+      baseImage: { dataBase64: $base64 },
+      videoDurationSeconds: 12,
+      scrollStartSeconds: 2,
+      scrollEndSeconds: 10
+    }')" \
   --output render.mp4
 ```
 
