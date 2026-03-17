@@ -96,8 +96,18 @@ function generateVideo(options) {
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
   const escapedText = escapeDrawtextText(config.text);
   const initialScrollPauseSeconds = 1.5;
+  const finalScrollPauseSeconds = 0.7;
   const delayedScrollStart = config.startScrollAt + initialScrollPauseSeconds;
-  const delayedScrollEnd = config.endScrollAt + initialScrollPauseSeconds;
+  const delayedScrollEnd = Math.min(
+    config.endScrollAt + initialScrollPauseSeconds,
+    config.totalDuration - finalScrollPauseSeconds
+  );
+
+  if (delayedScrollEnd <= delayedScrollStart) {
+    throw new Error(
+      'Expected scroll timing to leave movement between the initial and final pauses. Increase SCROLL_END_SECONDS or VIDEO_DURATION_SECONDS.'
+    );
+  }
   // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
   const revealTextY = '480';
   // Fixed crop viewport is intentional because the frame is already scaled to 500x750.
