@@ -97,12 +97,18 @@ function generateVideo(options) {
   const escapedText = escapeDrawtextText(config.text);
   // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
   const revealTextY = 'h*0.52';
+  const revealViewportX = 'w*0.12';
+  const revealViewportY = `${revealTextY}-8`;
+  const revealViewportW = 'w*0.76';
+  const revealViewportH = '88';
+  const scrollX = `if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))`;
 
   const filter = [
-    'scale=500:750',
-    `drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill`,
-    `drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=72:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))':y=${revealTextY}`
-  ].join(',');
+    `scale=500:750,drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill,split=2[base][textsrc]`,
+    // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
+    `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=72:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
+    `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
+  ].join(';');
 
   const ffmpegArgs = [
     '-y',
