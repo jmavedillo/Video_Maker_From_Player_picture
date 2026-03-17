@@ -95,10 +95,12 @@ function generateVideo(options) {
 
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
   const escapedText = escapeDrawtextText(config.text);
+  // Keep the reveal text in a stable title area with a fixed in-frame bottom margin.
+  const revealTextY = 'h-105';
 
   const filter = [
     `drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill`,
-    `drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=42:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))':y=h-73`
+    `drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=42:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))':y=${revealTextY}`
   ].join(',');
 
   const ffmpegArgs = [
