@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
-const imagePath = path.join(rootDir, 'assets', 'images', 'base.png');
+const defaultImagePath = path.join(rootDir, 'assets', 'images', 'base.png');
 const fontsDir = path.join(rootDir, 'assets', 'fonts');
 
 const TIMING_PRESETS = {
@@ -60,6 +60,7 @@ function buildConfig(options = {}) {
       process.env.SCROLL_END_SECONDS ??
       selectedTimingPreset.scrollEndSeconds
   );
+  const imagePath = options.imagePath || defaultImagePath;
 
   if (!Number.isFinite(totalDuration) || totalDuration <= 0) {
     throw new Error('VIDEO_DURATION_SECONDS must be a positive number.');
