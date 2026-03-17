@@ -95,19 +95,22 @@ function generateVideo(options) {
 
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
   const escapedText = escapeDrawtextText(config.text);
+  const initialScrollPauseSeconds = 1.5;
+  const delayedScrollStart = config.startScrollAt + initialScrollPauseSeconds;
+  const delayedScrollEnd = config.endScrollAt + initialScrollPauseSeconds;
   // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
-  const revealTextY = 'h*0.52';
+  const revealTextY = '490';
   // Fixed crop viewport is intentional because the frame is already scaled to 500x750.
   const revealViewportX = '60';
-  const revealViewportY = '382';
-  const revealViewportW = '380';
+  const revealViewportY = '482';
+  const revealViewportW = '300';
   const revealViewportH = '88';
-  const scrollX = `if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))`;
+  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*220,w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*220))`;
 
   const filter = [
     `scale=500:750,drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill,split=2[base][textsrc]`,
     // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
-    `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=72:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
+    `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
   ].join(';');
 
