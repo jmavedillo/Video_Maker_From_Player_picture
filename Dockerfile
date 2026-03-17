@@ -9,6 +9,7 @@ RUN apt-get update \
 COPY package.json ./
 COPY src ./src
 COPY assets ./assets
-COPY output ./output
 
-CMD ["node", "src/index.js"]
+EXPOSE 3000
+
+CMD ["node", "src/server.js"]
