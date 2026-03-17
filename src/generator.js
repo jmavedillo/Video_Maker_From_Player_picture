@@ -87,9 +87,10 @@ function generateVideo(options) {
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  const titleY = 'h-120';
+  // drawbox uses input-dimension vars (iw/ih) instead of w/h in this filter context.
+  const titleY = 'ih-120';
   const titleX = '60';
-  const titleW = 'w-120';
+  const titleW = 'iw-120';
   const titleH = '70';
 
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
