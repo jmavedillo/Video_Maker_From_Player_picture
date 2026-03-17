@@ -97,9 +97,10 @@ function generateVideo(options) {
   const escapedText = escapeDrawtextText(config.text);
   // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
   const revealTextY = 'h*0.52';
-  const revealViewportX = 'w*0.12';
-  const revealViewportY = `${revealTextY}-8`;
-  const revealViewportW = 'w*0.76';
+  // Fixed crop viewport is intentional because the frame is already scaled to 500x750.
+  const revealViewportX = '60';
+  const revealViewportY = '382';
+  const revealViewportW = '380';
   const revealViewportH = '88';
   const scrollX = `if(lt(t,${config.startScrollAt}),w*0.12,if(lt(t,${config.endScrollAt}),w*0.12-(t-${config.startScrollAt})*220,w*0.12-(${config.endScrollAt}-${config.startScrollAt})*220))`;
 
