@@ -16,12 +16,12 @@ const TIMING_PRESETS = {
     scrollPixelsPerSecond: 56
   },
   long: {
-    videoDurationSeconds: 10,
+    videoDurationSeconds: 13,
     scrollStartSeconds: 0,
-    scrollEndSeconds: 8.5,
+    scrollEndSeconds: 11.5,
     initialPauseSeconds: 1.5,
     finalPauseSeconds: 1.5,
-    scrollPixelsPerSecond: 48
+    scrollPixelsPerSecond: 50
   }
 };
 
