@@ -98,7 +98,23 @@ async function handleRender(req, res) {
     await generateVideo({ ...renderOptions, outputPath });
   } catch (error) {
     await fsp.rm(tmpDir, { recursive: true, force: true });
-    sendJson(res, 500, { error: error.message });
+    const diagnostics = error.details || {};
+    console.error('Render failed:', {
+      error: error.message,
+      code: diagnostics.code ?? null,
+      signal: diagnostics.signal ?? null,
+      killed: diagnostics.killed ?? null,
+      elapsedMs: diagnostics.elapsedMs ?? null,
+      command: diagnostics.command ?? null
+    });
+    sendJson(res, 500, {
+      error: error.message,
+      code: diagnostics.code ?? null,
+      signal: diagnostics.signal ?? null,
+      killed: diagnostics.killed ?? null,
+      elapsedMs: diagnostics.elapsedMs ?? null,
+      command: diagnostics.command ?? null
+    });
     return;
   }
 

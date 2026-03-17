@@ -24,13 +24,13 @@ function buildConfig(options = {}) {
     'Now Playing — This is a long scrolling title for the first MP4 proof of concept';
 
   const totalDuration = Number(
-    options.videoDurationSeconds ?? process.env.VIDEO_DURATION_SECONDS ?? 10
+    options.videoDurationSeconds ?? process.env.VIDEO_DURATION_SECONDS ?? 3
   );
   const startScrollAt = Number(
-    options.scrollStartSeconds ?? process.env.SCROLL_START_SECONDS ?? 1.5
+    options.scrollStartSeconds ?? process.env.SCROLL_START_SECONDS ?? 0.5
   );
   const endScrollAt = Number(
-    options.scrollEndSeconds ?? process.env.SCROLL_END_SECONDS ?? 8.5
+    options.scrollEndSeconds ?? process.env.SCROLL_END_SECONDS ?? 2.5
   );
 
   if (!Number.isFinite(totalDuration) || totalDuration <= 0) {
@@ -111,18 +111,25 @@ function generateVideo(options) {
     String(config.totalDuration),
     '-vf',
     filter,
+    '-s',
+    '500x750',
     '-c:v',
     'libx264',
+    '-preset',
+    'ultrafast',
+    '-threads',
+    '1',
     '-pix_fmt',
     'yuv420p',
     '-movflags',
     '+faststart',
     '-r',
-    '30',
+    '15',
     outputPath
   ];
 
   return new Promise((resolve, reject) => {
+    const startTime = Date.now();
     const ffmpeg = spawn('ffmpeg', ffmpegArgs, {
       stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -134,20 +141,47 @@ function generateVideo(options) {
     });
 
     ffmpeg.on('error', (err) => {
-      reject(new Error(`Failed to start ffmpeg: ${err.message}`));
+      const elapsedMs = Date.now() - startTime;
+      const wrapped = new Error(`Failed to start ffmpeg: ${err.message}`);
+      wrapped.details = {
+        code: err.code ?? null,
+        signal: err.signal ?? null,
+        killed: ffmpeg.killed,
+        elapsedMs,
+        command: `ffmpeg ${ffmpegArgs.join(' ')}`
+      };
+      reject(wrapped);
     });
 
-    ffmpeg.on('close', (code) => {
+    ffmpeg.on('close', (code, signal) => {
+      const elapsedMs = Date.now() - startTime;
       if (code === 0) {
         resolve({ outputPath, config });
         return;
       }
 
-      reject(
-        new Error(
-          `ffmpeg failed with exit code ${code}. ${stderr ? `ffmpeg stderr:\n${stderr}` : ''}`
-        )
+      const details = {
+        code,
+        signal: signal ?? null,
+        killed: ffmpeg.killed,
+        elapsedMs,
+        command: `ffmpeg ${ffmpegArgs.join(' ')}`
+      };
+
+      const diagnostic = [
+        `code=${details.code}`,
+        `signal=${details.signal}`,
+        `killed=${details.killed}`,
+        `elapsedMs=${details.elapsedMs}`,
+        `command=${details.command}`
+      ].join(', ');
+
+      const wrapped = new Error(
+        `ffmpeg failed (${diagnostic}). ${stderr ? `ffmpeg stderr:\n${stderr}` : ''}`
       );
+      wrapped.details = details;
+
+      reject(wrapped);
     });
   });
 }
