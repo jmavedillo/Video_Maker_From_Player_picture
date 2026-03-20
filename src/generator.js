@@ -116,11 +116,6 @@ function generateVideo(options) {
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-  // drawbox uses input-dimension vars (iw/ih) instead of w/h in this filter context.
-  const titleY = 'ih-120';
-  const titleX = '60';
-  const titleW = 'iw-120';
-  const titleH = '70';
 
   const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
   const escapedText = escapeDrawtextText(config.text);
@@ -148,7 +143,7 @@ function generateVideo(options) {
   const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*${scrollPixelsPerSecond},w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*${scrollPixelsPerSecond}))`;
 
   const filter = [
-    `scale=500:750,drawbox=x=${titleX}:y=${titleY}:w=${titleW}:h=${titleH}:color=black@0.45:t=fill,split=2[base][textsrc]`,
+    `scale=500:750,split=2[base][textsrc]`,
     // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
     `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
