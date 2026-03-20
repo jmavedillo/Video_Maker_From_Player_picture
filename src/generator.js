@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
 const defaultImagePath = path.join(rootDir, 'assets', 'images', 'base.png');
+const defaultAudioPath = path.join(rootDir, 'assets', 'images', 'SoundBase1.mp3');
 const fontsDir = path.join(rootDir, 'assets', 'fonts');
 
 const TIMING_PRESETS = {
@@ -61,6 +62,7 @@ function buildConfig(options = {}) {
       selectedTimingPreset.scrollEndSeconds
   );
   const imagePath = options.imagePath || defaultImagePath;
+  const audioPath = options.audioPath || defaultAudioPath;
 
   if (!Number.isFinite(totalDuration) || totalDuration <= 0) {
     throw new Error('VIDEO_DURATION_SECONDS must be a positive number.');
@@ -78,6 +80,10 @@ function buildConfig(options = {}) {
 
   if (!fs.existsSync(imagePath)) {
     throw new Error(`Missing image: ${imagePath}. Add a base image at assets/images/base.png and run again.`);
+  }
+
+  if (!fs.existsSync(audioPath)) {
+    throw new Error(`Missing background audio: ${audioPath}. Add an MP3 file and run again.`);
   }
 
   if (!fs.existsSync(fontsDir)) {
@@ -102,6 +108,7 @@ function buildConfig(options = {}) {
     startScrollAt,
     endScrollAt,
     imagePath,
+    audioPath,
     fontPath
   };
 }
@@ -155,12 +162,22 @@ function generateVideo(options) {
     '1',
     '-i',
     config.imagePath,
+    '-i',
+    config.audioPath,
     '-t',
     String(config.totalDuration),
     '-vf',
     filter,
+    '-map',
+    '0:v:0',
+    '-map',
+    '1:a:0',
     '-c:v',
     'libx264',
+    '-c:a',
+    'aac',
+    '-b:a',
+    '192k',
     '-preset',
     'ultrafast',
     '-threads',
