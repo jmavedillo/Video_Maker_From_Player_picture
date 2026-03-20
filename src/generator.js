@@ -145,7 +145,7 @@ function generateVideo(options) {
   const filter = [
     `scale=500:750,split=2[base][textsrc]`,
     // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
-    `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:shadowcolor=black@0.8:shadowx=2:shadowy=2:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
+    `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
   ].join(';');
 
