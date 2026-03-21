@@ -159,16 +159,15 @@ function generateVideo(options) {
   const xExpr = '(iw-iw/zoom)/2';
   const yExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
   const normalLightFlashStartTimes = [2.3, 4.3, 6.3, 8.3, 10.4];
-  const flashHitExpr = normalLightFlashStartTimes
+  const finalLightStartSeconds = normalLightFlashStartTimes[normalLightFlashStartTimes.length - 1] + 2.0;
+  const lightFlashStartTimes = [...normalLightFlashStartTimes, finalLightStartSeconds];
+  const flashHitExpr = lightFlashStartTimes
     .map((start) => `between(t,${start.toFixed(2)},${(start + 0.06).toFixed(2)})`)
     .join('+');
-  const flashDecayExpr = normalLightFlashStartTimes
+  const flashDecayExpr = lightFlashStartTimes
     .map((start) => `between(t,${(start + 0.06).toFixed(2)},${(start + 0.14).toFixed(2)})`)
     .join('+');
   const flashBrightnessExpr = `if(${flashHitExpr},0.075,if(${flashDecayExpr},0.035,0))`;
-  const finalLightStartSeconds = normalLightFlashStartTimes[normalLightFlashStartTimes.length - 1] + 2.0;
-  const finalLightPeakSeconds = finalLightStartSeconds + 0.18;
-  const finalWhiteFadeDurationSeconds = (finalLightPeakSeconds - finalLightStartSeconds).toFixed(2);
 
   const revealTextY = '480';
   const revealViewportX = '60';
@@ -179,9 +178,7 @@ function generateVideo(options) {
 
   const filterComplex = [
     `[0:v]split=2[textsrc][pulsebase]`,
-    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}':eval=frame,format=yuv420p[vbgbase]`,
-    `color=c=white:s=500x750:d=${config.totalDuration},format=rgba,fade=t=in:st=${finalLightStartSeconds.toFixed(2)}:d=${finalWhiteFadeDurationSeconds}:alpha=1[white]`,
-    `[vbgbase][white]overlay=x=0:y=0[vbg]`,
+    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}':eval=frame,format=yuv420p[vbg]`,
     `[textsrc]scale=500:750,drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[vbg][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}[vout]`
   ].join(';');
