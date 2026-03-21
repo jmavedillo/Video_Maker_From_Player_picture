@@ -155,9 +155,7 @@ function generateVideo(options) {
   const zoomExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,1.035,if(${discreteFrameMatch(firstHitDecayFrames)}\\,1.018,if(${discreteFrameMatch(secondHitFrames)}\\,1.018,if(${discreteFrameMatch(secondHitDecayFrames)}\\,1.008,1.000))))`;
   const xExpr = '(iw-iw/zoom)/2';
   const yExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
-  const lightPulseTriggerFrames = [2.0, 4.0, 6.0, 8.0].map((seconds) => Math.round(seconds * 15));
-  const lightPulseDecayFrames = lightPulseTriggerFrames.map((frame) => frame + 1);
-  const flashBrightnessExpr = `if(${discreteFrameMatch(lightPulseTriggerFrames)}\\,0.055,if(${discreteFrameMatch(lightPulseDecayFrames)}\\,0.025,0))`;
+  const flashBrightnessExpr = "if(between(t,2.00,2.06)+between(t,4.00,4.06)+between(t,6.00,6.06)+between(t,8.00,8.06),0.055,if(between(t,2.06,2.12)+between(t,4.06,4.12)+between(t,6.06,6.12)+between(t,8.06,8.12),0.025,0))";
 
   const revealTextY = '480';
   const revealViewportX = '60';
@@ -168,7 +166,7 @@ function generateVideo(options) {
 
   const filterComplex = [
     `[0:v]split=2[textsrc][pulsebase]`,
-    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}',format=yuv420p[vbg]`,
+    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}':eval=frame,format=yuv420p[vbg]`,
     `[textsrc]scale=500:750,drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[vbg][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}[vout]`
   ].join(';');
