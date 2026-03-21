@@ -149,9 +149,9 @@ function generateVideo(options) {
 
   const revealTextY = '480';
   const revealViewportX = '60';
-  const revealViewportY = '482';
+  const revealViewportY = '476';
   const revealViewportW = '300';
-  const revealViewportH = '88';
+  const revealViewportH = '56';
   const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*${scrollPixelsPerSecond},w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*${scrollPixelsPerSecond}))`;
 
   const filterComplex = [
