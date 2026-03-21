@@ -168,7 +168,7 @@ function generateVideo(options) {
   const flashBrightnessExpr = `if(${flashHitExpr},0.075,if(${flashDecayExpr},0.035,0))`;
   const finalLightStartSeconds = normalLightFlashStartTimes[normalLightFlashStartTimes.length - 1] + 2.0;
   const finalLightPeakSeconds = finalLightStartSeconds + 0.18;
-  const finalWhiteAlphaExpr = `'if(lt(t,${finalLightStartSeconds}),0,if(lt(t,${finalLightPeakSeconds}),(t-${finalLightStartSeconds})/${(finalLightPeakSeconds-finalLightStartSeconds).toFixed(2)},1))'`;
+  const finalWhiteFadeDurationSeconds = (finalLightPeakSeconds - finalLightStartSeconds).toFixed(2);
 
   const revealTextY = '480';
   const revealViewportX = '60';
@@ -180,8 +180,8 @@ function generateVideo(options) {
   const filterComplex = [
     `[0:v]split=2[textsrc][pulsebase]`,
     `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}':eval=frame,format=yuv420p[vbgbase]`,
-    `color=c=white:s=500x750:d=${config.totalDuration}[white]`,
-    `[vbgbase][white]overlay=x=0:y=0:alpha=${finalWhiteAlphaExpr}:eval=frame[vbg]`,
+    `color=c=white:s=500x750:d=${config.totalDuration},format=rgba,fade=t=in:st=${finalLightStartSeconds.toFixed(2)}:d=${finalWhiteFadeDurationSeconds}:alpha=1[white]`,
+    `[vbgbase][white]overlay=x=0:y=0[vbg]`,
     `[textsrc]scale=500:750,drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[vbg][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}[vout]`
   ].join(';');
