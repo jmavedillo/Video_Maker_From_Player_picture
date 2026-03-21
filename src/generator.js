@@ -142,7 +142,8 @@ function generateVideo(options) {
   }
 
   const firstPulseShiftPx = 1;
-  const pulseTimesMs = [3000, 5000, 7000, 7750, 9000, 9250];
+  const heartbeatDelayMs = 250;
+  const pulseTimesMs = [3000, 5000, 7000, 7750, 9000, 9250].map((timeMs) => timeMs + heartbeatDelayMs);
   const heartbeatTriggerFrames = pulseTimesMs.map((timeMs) => Math.round((timeMs / 1000) * 15));
   const firstHitFrames = heartbeatTriggerFrames;
   const firstHitDecayFrames = heartbeatTriggerFrames.map((frame) => frame + 1);
