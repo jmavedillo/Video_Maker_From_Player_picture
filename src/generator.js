@@ -124,18 +124,42 @@ function generateVideo(options) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 
+  const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
+  const escapedText = escapeDrawtextText(config.text);
+  const initialScrollPauseSeconds = selectedTimingPreset.initialPauseSeconds;
+  const finalScrollPauseSeconds = selectedTimingPreset.finalPauseSeconds;
+  const scrollPixelsPerSecond = selectedTimingPreset.scrollPixelsPerSecond;
+  const delayedScrollStart = config.startScrollAt + initialScrollPauseSeconds;
+  const delayedScrollEnd = Math.min(
+    config.endScrollAt,
+    config.totalDuration - finalScrollPauseSeconds
+  );
+
+  if (delayedScrollEnd <= delayedScrollStart) {
+    throw new Error(
+      'Expected scroll timing to leave movement between the initial and final pauses. Increase SCROLL_END_SECONDS or VIDEO_DURATION_SECONDS.'
+    );
+  }
+
   const heartbeatCycleFrames = 18;
   const firstPulseShiftPx = 1;
-
   const zoomExpr = `if(eq(mod(on\\,${heartbeatCycleFrames})\\,0)\\,1.035,if(eq(mod(on\\,${heartbeatCycleFrames})\\,1)\\,1.018,if(eq(mod(on\\,${heartbeatCycleFrames})\\,4)\\,1.020,if(eq(mod(on\\,${heartbeatCycleFrames})\\,5)\\,1.010,1.000))))`;
   const xExpr = '(iw-iw/zoom)/2';
   const yExpr = `if(eq(mod(on\\,${heartbeatCycleFrames})\\,0)\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
 
+  const revealTextY = '480';
+  const revealViewportX = '60';
+  const revealViewportY = '482';
+  const revealViewportW = '300';
+  const revealViewportH = '88';
+  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*${scrollPixelsPerSecond},w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*${scrollPixelsPerSecond}))`;
+
   const filterComplex = [
-    `[0:v]scale=520:780`,
-    `zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750`,
-    'format=yuv420p[vbg]'
-  ].join(',');
+    `[0:v]split=2[textsrc][pulsebase]`,
+    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,format=yuv420p[vbg]`,
+    `[textsrc]scale=500:750,drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
+    `[vbg][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}[vout]`
+  ].join(';');
 
   const ffmpegArgs = [
     '-y',
@@ -150,7 +174,7 @@ function generateVideo(options) {
     '-filter_complex',
     filterComplex,
     '-map',
-    '[vbg]',
+    '[vout]',
     '-map',
     '1:a:0',
     '-c:v',
