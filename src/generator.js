@@ -143,7 +143,10 @@ function generateVideo(options) {
 
   const firstPulseShiftPx = 1;
   const heartbeatDelayMs = 350;
-  const pulseTimesMs = [3000, 5000, 7000, 7750, 9000, 9250].map((timeMs, index) =>
+  const existingHeartbeatBaseTimesMs = [3000, 5000, 7000, 7750, 9000, 9250];
+  const finalHeartbeatBaseTimeMs = existingHeartbeatBaseTimesMs[existingHeartbeatBaseTimesMs.length - 1] + 2000;
+  const heartbeatBaseTimesMs = [...existingHeartbeatBaseTimesMs, finalHeartbeatBaseTimeMs];
+  const pulseTimesMs = heartbeatBaseTimesMs.map((timeMs, index) =>
     timeMs + heartbeatDelayMs + (index >= 4 ? 100 : 0)
   );
   const heartbeatTriggerFrames = pulseTimesMs.map((timeMs) => Math.round((timeMs / 1000) * 15));
@@ -155,7 +158,17 @@ function generateVideo(options) {
   const zoomExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,1.035,if(${discreteFrameMatch(firstHitDecayFrames)}\\,1.018,if(${discreteFrameMatch(secondHitFrames)}\\,1.018,if(${discreteFrameMatch(secondHitDecayFrames)}\\,1.008,1.000))))`;
   const xExpr = '(iw-iw/zoom)/2';
   const yExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
-  const flashBrightnessExpr = "if(between(t,2.30,2.36)+between(t,4.30,4.36)+between(t,6.30,6.36)+between(t,8.30,8.36)+between(t,10.40,10.46),0.075,if(between(t,2.36,2.44)+between(t,4.36,4.44)+between(t,6.36,6.44)+between(t,8.36,8.44)+between(t,10.46,10.54),0.035,0))";
+  const normalLightFlashStartTimes = [2.3, 4.3, 6.3, 8.3, 10.4];
+  const flashHitExpr = normalLightFlashStartTimes
+    .map((start) => `between(t,${start.toFixed(2)},${(start + 0.06).toFixed(2)})`)
+    .join('+');
+  const flashDecayExpr = normalLightFlashStartTimes
+    .map((start) => `between(t,${(start + 0.06).toFixed(2)},${(start + 0.14).toFixed(2)})`)
+    .join('+');
+  const flashBrightnessExpr = `if(${flashHitExpr},0.075,if(${flashDecayExpr},0.035,0))`;
+  const finalLightStartSeconds = normalLightFlashStartTimes[normalLightFlashStartTimes.length - 1] + 2.0;
+  const finalLightPeakSeconds = finalLightStartSeconds + 0.18;
+  const finalWhiteAlphaExpr = `'if(lt(t,${finalLightStartSeconds}),0,if(lt(t,${finalLightPeakSeconds}),(t-${finalLightStartSeconds})/${(finalLightPeakSeconds-finalLightStartSeconds).toFixed(2)},1))'`;
 
   const revealTextY = '480';
   const revealViewportX = '60';
@@ -166,7 +179,9 @@ function generateVideo(options) {
 
   const filterComplex = [
     `[0:v]split=2[textsrc][pulsebase]`,
-    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}':eval=frame,format=yuv420p[vbg]`,
+    `[pulsebase]scale=520:780,zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750,eq=brightness='${flashBrightnessExpr}':eval=frame,format=yuv420p[vbgbase]`,
+    `color=c=white:s=500x750:d=${config.totalDuration}[white]`,
+    `[vbgbase][white]overlay=x=0:y=0:alpha=${finalWhiteAlphaExpr}:eval=frame[vbg]`,
     `[textsrc]scale=500:750,drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[vbg][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}[vout]`
   ].join(';');
