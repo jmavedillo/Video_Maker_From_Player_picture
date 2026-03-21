@@ -124,59 +124,18 @@ function generateVideo(options) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 
-  const escapedFontPath = config.fontPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
-  const escapedText = escapeDrawtextText(config.text);
-  const initialScrollPauseSeconds = selectedTimingPreset.initialPauseSeconds;
-  const finalScrollPauseSeconds = selectedTimingPreset.finalPauseSeconds;
-  const scrollPixelsPerSecond = selectedTimingPreset.scrollPixelsPerSecond;
-  const delayedScrollStart = config.startScrollAt + initialScrollPauseSeconds;
-  const delayedScrollEnd = Math.min(
-    config.endScrollAt,
-    config.totalDuration - finalScrollPauseSeconds
-  );
+  const heartbeatCycleFrames = 18;
+  const firstPulseShiftPx = 1;
 
-  if (delayedScrollEnd <= delayedScrollStart) {
-    throw new Error(
-      'Expected scroll timing to leave movement between the initial and final pauses. Increase SCROLL_END_SECONDS or VIDEO_DURATION_SECONDS.'
-    );
-  }
-  // Scale first so drawbox/drawtext coordinates and font size are computed on the final 500x750 frame.
-  const revealTextY = '480';
-  // Fixed crop viewport is intentional because the frame is already scaled to 500x750.
-  const revealViewportX = '60';
-  const revealViewportY = '482';
-  const revealViewportW = '300';
-  const revealViewportH = '88';
-  const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*${scrollPixelsPerSecond},w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*${scrollPixelsPerSecond}))`;
+  const zoomExpr = `if(eq(mod(on\\,${heartbeatCycleFrames})\\,0)\\,1.035,if(eq(mod(on\\,${heartbeatCycleFrames})\\,1)\\,1.018,if(eq(mod(on\\,${heartbeatCycleFrames})\\,4)\\,1.020,if(eq(mod(on\\,${heartbeatCycleFrames})\\,5)\\,1.010,1.000))))`;
+  const xExpr = '(iw-iw/zoom)/2';
+  const yExpr = `if(eq(mod(on\\,${heartbeatCycleFrames})\\,0)\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
 
-  const heartbeatCycleSeconds = 1.2;
-  const firstPulsePeakScale = 1.035;
-  const secondPulsePeakScale = 1.02;
-  const pulseHalfDurationSeconds = 0.06;
-  const firstPulseStartSeconds = 0;
-  const secondPulseStartSeconds = 0.25;
-  const microJoltPixels = 1.5;
-  const firstPulseFlareSeconds = 0.15;
-
-  const heartbeatPhaseExpr = `mod(t\\,${heartbeatCycleSeconds})`;
-  const firstPulseExpansionExpr = `1+${(firstPulsePeakScale - 1).toFixed(3)}*(1-pow(1-(${heartbeatPhaseExpr}-${firstPulseStartSeconds})/${pulseHalfDurationSeconds}\\,2))`;
-  const firstPulseContractionExpr = `1+${(firstPulsePeakScale - 1).toFixed(3)}*(1-pow((${heartbeatPhaseExpr}-${pulseHalfDurationSeconds})/${pulseHalfDurationSeconds}\\,2))`;
-  const secondPulseExpansionExpr = `1+${(secondPulsePeakScale - 1).toFixed(3)}*(1-pow(1-(${heartbeatPhaseExpr}-${secondPulseStartSeconds})/${pulseHalfDurationSeconds}\\,2))`;
-  const secondPulseContractionExpr = `1+${(secondPulsePeakScale - 1).toFixed(3)}*(1-pow((${heartbeatPhaseExpr}-${secondPulseStartSeconds + pulseHalfDurationSeconds})/${pulseHalfDurationSeconds}\\,2))`;
-  const breathingExpr = `1+0.005*pow(sin(((${heartbeatPhaseExpr}-${secondPulseStartSeconds + pulseHalfDurationSeconds})/(${heartbeatCycleSeconds - (secondPulseStartSeconds + pulseHalfDurationSeconds)}))*PI)\\,2)`;
-  const heartbeatScaleExpr = `if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds})\\,${firstPulseExpansionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds * 2})\\,${firstPulseContractionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${secondPulseStartSeconds + pulseHalfDurationSeconds})\\,${secondPulseExpansionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${secondPulseStartSeconds + pulseHalfDurationSeconds * 2})\\,${secondPulseContractionExpr}\\,${breathingExpr}))))`;
-  const firstPulseYOffsetExpr = `if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds * 2})\\,-${microJoltPixels}*sin((${heartbeatPhaseExpr}/${pulseHalfDurationSeconds * 2})*PI)\\,0)`;
-  const flareEnableExpr = `lt(mod(t\\,${heartbeatCycleSeconds})\\,${firstPulseFlareSeconds})`;
-
-  const filter = [
-    `scale=500:750,split=2[bgsrc][textsrc]`,
-    `[bgsrc]scale=w='500*(${heartbeatScaleExpr})':h='750*(${heartbeatScaleExpr})':eval=frame,crop=w=500:h=750:x='(iw-500)/2':y='(ih-750)/2+(${firstPulseYOffsetExpr})'[pulsebg]`,
-    `color=c=black@0.0:s=500x750:d=${config.totalDuration},format=rgba,drawbox=x=130:y=215:w=240:h=240:color=white@0.07:t=fill,drawbox=x=180:y=265:w=140:h=140:color=white@0.12:t=fill[flare]`,
-    `[pulsebg][flare]overlay=x=0:y=0:format=auto:enable='${flareEnableExpr}'[base]`,
-    // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
-    `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
-    `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
-  ].join(';');
+  const filterComplex = [
+    `[0:v]scale=520:780`,
+    `zoompan=z='${zoomExpr}':x='${xExpr}':y='${yExpr}':d=1:fps=15:s=500x750`,
+    'format=yuv420p[vbg]'
+  ].join(',');
 
   const ffmpegArgs = [
     '-y',
@@ -188,10 +147,10 @@ function generateVideo(options) {
     config.audioPath,
     '-t',
     String(config.totalDuration),
-    '-vf',
-    filter,
+    '-filter_complex',
+    filterComplex,
     '-map',
-    '0:v:0',
+    '[vbg]',
     '-map',
     '1:a:0',
     '-c:v',
