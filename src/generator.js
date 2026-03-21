@@ -143,13 +143,14 @@ function generateVideo(options) {
 
   const firstPulseShiftPx = 1;
   const heartbeatTriggerFrames = [120, 150, 180, 191, 206, 210, 240];
-  const firstHitFrames = heartbeatTriggerFrames.join('\\,');
-  const firstHitDecayFrames = heartbeatTriggerFrames.map((frame) => frame + 1).join('\\,');
-  const secondHitFrames = heartbeatTriggerFrames.map((frame) => frame + 2).join('\\,');
-  const secondHitDecayFrames = heartbeatTriggerFrames.map((frame) => frame + 3).join('\\,');
-  const zoomExpr = `if(in(on\\,${firstHitFrames})\\,1.035,if(in(on\\,${firstHitDecayFrames})\\,1.018,if(in(on\\,${secondHitFrames})\\,1.018,if(in(on\\,${secondHitDecayFrames})\\,1.008,1.000))))`;
+  const firstHitFrames = heartbeatTriggerFrames;
+  const firstHitDecayFrames = heartbeatTriggerFrames.map((frame) => frame + 1);
+  const secondHitFrames = heartbeatTriggerFrames.map((frame) => frame + 2);
+  const secondHitDecayFrames = heartbeatTriggerFrames.map((frame) => frame + 3);
+  const discreteFrameMatch = (frames) => frames.map((frame) => `eq(on\\,${frame})`).join('+');
+  const zoomExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,1.035,if(${discreteFrameMatch(firstHitDecayFrames)}\\,1.018,if(${discreteFrameMatch(secondHitFrames)}\\,1.018,if(${discreteFrameMatch(secondHitDecayFrames)}\\,1.008,1.000))))`;
   const xExpr = '(iw-iw/zoom)/2';
-  const yExpr = `if(in(on\\,${firstHitFrames})\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
+  const yExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
 
   const revealTextY = '480';
   const revealViewportX = '60';
