@@ -166,13 +166,13 @@ function generateVideo(options) {
   const breathingExpr = `1+0.005*pow(sin(((${heartbeatPhaseExpr}-${secondPulseStartSeconds + pulseHalfDurationSeconds})/(${heartbeatCycleSeconds - (secondPulseStartSeconds + pulseHalfDurationSeconds)}))*PI)\\,2)`;
   const heartbeatScaleExpr = `if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds})\\,${firstPulseExpansionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds * 2})\\,${firstPulseContractionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${secondPulseStartSeconds + pulseHalfDurationSeconds})\\,${secondPulseExpansionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${secondPulseStartSeconds + pulseHalfDurationSeconds * 2})\\,${secondPulseContractionExpr}\\,${breathingExpr}))))`;
   const firstPulseYOffsetExpr = `if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds * 2})\\,-${microJoltPixels}*sin((${heartbeatPhaseExpr}/${pulseHalfDurationSeconds * 2})*PI)\\,0)`;
-  const flareOpacityExpr = `if(lt(${heartbeatPhaseExpr}\\,${firstPulseFlareSeconds})\\,0.12*(1-${heartbeatPhaseExpr}/${firstPulseFlareSeconds})\\,0)`;
+  const flareEnableExpr = `lt(mod(t\\,${heartbeatCycleSeconds})\\,${firstPulseFlareSeconds})`;
 
   const filter = [
     `scale=500:750,split=2[bgsrc][textsrc]`,
     `[bgsrc]scale=w='500*(${heartbeatScaleExpr})':h='750*(${heartbeatScaleExpr})':eval=frame,crop=w=500:h=750:x='(iw-500)/2':y='(ih-750)/2+(${firstPulseYOffsetExpr})'[pulsebg]`,
-    `color=c=white:s=500x750:d=${config.totalDuration},format=rgba,drawbox=x=130:y=215:w=240:h=240:color=white@0.07:t=fill,drawbox=x=180:y=265:w=140:h=140:color=white@0.12:t=fill,colorchannelmixer=aa='${flareOpacityExpr}'[flare]`,
-    `[pulsebg][flare]overlay=x=0:y=0:format=auto[base]`,
+    `color=c=black@0.0:s=500x750:d=${config.totalDuration},format=rgba,drawbox=x=130:y=215:w=240:h=240:color=white@0.07:t=fill,drawbox=x=180:y=265:w=140:h=140:color=white@0.12:t=fill[flare]`,
+    `[pulsebg][flare]overlay=x=0:y=0:format=auto:enable='${flareEnableExpr}'[base]`,
     // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
     `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
