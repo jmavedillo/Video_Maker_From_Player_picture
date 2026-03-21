@@ -149,8 +149,30 @@ function generateVideo(options) {
   const revealViewportH = '88';
   const scrollX = `if(lt(t,${delayedScrollStart}),w*0.12,if(lt(t,${delayedScrollEnd}),w*0.12-(t-${delayedScrollStart})*${scrollPixelsPerSecond},w*0.12-(${delayedScrollEnd}-${delayedScrollStart})*${scrollPixelsPerSecond}))`;
 
+  const heartbeatCycleSeconds = 1.2;
+  const firstPulsePeakScale = 1.035;
+  const secondPulsePeakScale = 1.02;
+  const pulseHalfDurationSeconds = 0.06;
+  const firstPulseStartSeconds = 0;
+  const secondPulseStartSeconds = 0.25;
+  const microJoltPixels = 1.5;
+  const firstPulseFlareSeconds = 0.15;
+
+  const heartbeatPhaseExpr = `mod(t\\,${heartbeatCycleSeconds})`;
+  const firstPulseExpansionExpr = `1+${(firstPulsePeakScale - 1).toFixed(3)}*(1-pow(1-(${heartbeatPhaseExpr}-${firstPulseStartSeconds})/${pulseHalfDurationSeconds}\\,2))`;
+  const firstPulseContractionExpr = `1+${(firstPulsePeakScale - 1).toFixed(3)}*(1-pow((${heartbeatPhaseExpr}-${pulseHalfDurationSeconds})/${pulseHalfDurationSeconds}\\,2))`;
+  const secondPulseExpansionExpr = `1+${(secondPulsePeakScale - 1).toFixed(3)}*(1-pow(1-(${heartbeatPhaseExpr}-${secondPulseStartSeconds})/${pulseHalfDurationSeconds}\\,2))`;
+  const secondPulseContractionExpr = `1+${(secondPulsePeakScale - 1).toFixed(3)}*(1-pow((${heartbeatPhaseExpr}-${secondPulseStartSeconds + pulseHalfDurationSeconds})/${pulseHalfDurationSeconds}\\,2))`;
+  const breathingExpr = `1+0.005*pow(sin(((${heartbeatPhaseExpr}-${secondPulseStartSeconds + pulseHalfDurationSeconds})/(${heartbeatCycleSeconds - (secondPulseStartSeconds + pulseHalfDurationSeconds)}))*PI)\\,2)`;
+  const heartbeatScaleExpr = `if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds})\\,${firstPulseExpansionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds * 2})\\,${firstPulseContractionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${secondPulseStartSeconds + pulseHalfDurationSeconds})\\,${secondPulseExpansionExpr}\\,if(lt(${heartbeatPhaseExpr}\\,${secondPulseStartSeconds + pulseHalfDurationSeconds * 2})\\,${secondPulseContractionExpr}\\,${breathingExpr}))))`;
+  const firstPulseYOffsetExpr = `if(lt(${heartbeatPhaseExpr}\\,${pulseHalfDurationSeconds * 2})\\,-${microJoltPixels}*sin((${heartbeatPhaseExpr}/${pulseHalfDurationSeconds * 2})*PI)\\,0)`;
+  const flareOpacityExpr = `if(lt(${heartbeatPhaseExpr}\\,${firstPulseFlareSeconds})\\,0.12*(1-${heartbeatPhaseExpr}/${firstPulseFlareSeconds})\\,0)`;
+
   const filter = [
-    `scale=500:750,split=2[base][textsrc]`,
+    `scale=500:750,split=2[bgsrc][textsrc]`,
+    `[bgsrc]scale=w='500*(${heartbeatScaleExpr})':h='750*(${heartbeatScaleExpr})':eval=frame,crop=w=500:h=750:x='(iw-500)/2':y='(ih-750)/2+(${firstPulseYOffsetExpr})'[pulsebg]`,
+    `color=c=white:s=500x750:d=${config.totalDuration},format=rgba,drawbox=x=130:y=215:w=240:h=240:color=white@0.07:t=fill,drawbox=x=180:y=265:w=140:h=140:color=white@0.12:t=fill,colorchannelmixer=aa='${flareOpacityExpr}'[flare]`,
+    `[pulsebg][flare]overlay=x=0:y=0:format=auto[base]`,
     // Draw scrolling text on a duplicate layer, crop it to a fixed title viewport, then overlay it back.
     `[textsrc]drawtext=fontfile='${escapedFontPath}':text='${escapedText}':fontsize=52:fontcolor=white:x='${scrollX}':y=${revealTextY},crop=w=${revealViewportW}:h=${revealViewportH}:x=${revealViewportX}:y=${revealViewportY}[textclip]`,
     `[base][textclip]overlay=x=${revealViewportX}:y=${revealViewportY}`
