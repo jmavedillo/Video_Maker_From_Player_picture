@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
 const defaultImagePath = path.join(rootDir, 'assets', 'images', 'base.png');
-const defaultAudioPath = path.join(rootDir, 'assets', 'images', 'SoundBase1.mp3');
+const defaultAudioPath = path.join(rootDir, 'assets', 'images', 'SoundBase2.mp3');
 const fontsDir = path.join(rootDir, 'assets', 'fonts');
 
 const TIMING_PRESETS = {
@@ -142,7 +142,8 @@ function generateVideo(options) {
   }
 
   const firstPulseShiftPx = 1;
-  const heartbeatTriggerFrames = [120, 150, 180, 191, 206, 210, 240];
+  const pulseTimesMs = [3000, 5000, 7000, 7750, 9000, 9250];
+  const heartbeatTriggerFrames = pulseTimesMs.map((timeMs) => Math.round((timeMs / 1000) * 15));
   const firstHitFrames = heartbeatTriggerFrames;
   const firstHitDecayFrames = heartbeatTriggerFrames.map((frame) => frame + 1);
   const secondHitFrames = heartbeatTriggerFrames.map((frame) => frame + 2);
