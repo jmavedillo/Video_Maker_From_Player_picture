@@ -155,7 +155,7 @@ function generateVideo(options) {
   const zoomExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,1.035,if(${discreteFrameMatch(firstHitDecayFrames)}\\,1.018,if(${discreteFrameMatch(secondHitFrames)}\\,1.018,if(${discreteFrameMatch(secondHitDecayFrames)}\\,1.008,1.000))))`;
   const xExpr = '(iw-iw/zoom)/2';
   const yExpr = `if(${discreteFrameMatch(firstHitFrames)}\\,(ih-ih/zoom)/2-${firstPulseShiftPx},(ih-ih/zoom)/2)`;
-  const flashBrightnessExpr = "if(between(t,2.15,2.21)+between(t,4.15,4.21)+between(t,6.15,6.21)+between(t,8.15,8.21),0.075,if(between(t,2.21,2.29)+between(t,4.21,4.29)+between(t,6.21,6.29)+between(t,8.21,8.29),0.035,0))";
+  const flashBrightnessExpr = "if(between(t,2.30,2.36)+between(t,4.30,4.36)+between(t,6.30,6.36)+between(t,8.30,8.36),0.075,if(between(t,2.36,2.44)+between(t,4.36,4.44)+between(t,6.36,6.44)+between(t,8.36,8.44),0.035,0))";
 
   const revealTextY = '480';
   const revealViewportX = '60';
